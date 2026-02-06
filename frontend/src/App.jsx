@@ -1,20 +1,28 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Landing from "./components/Landing";
-import Dashboard from "./components/Dashboard";
+import HealthForm from "./pages/HealthForm";
+import Dashboard from "./pages/Dashboard";
+
+import Workouts from "./pages/Workouts";
+import Nutrition from "./pages/Nutrition";
+import AICoach from "./pages/AICoach";
 
 export default function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        {/* Landing */}
         <Route path="/" element={<Landing />} />
 
-        {/* After Google login */}
+        {/* after login, you can route user to dashboard or form depending on your flow */}
+        <Route path="/form" element={<HealthForm />} />
         <Route path="/dashboard" element={<Dashboard />} />
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* new pages opened from dashboard cards */}
+        <Route path="/workouts" element={<Workouts />} />
+        <Route path="/nutrition" element={<Nutrition />} />
+        <Route path="/coach" element={<AICoach />} />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
