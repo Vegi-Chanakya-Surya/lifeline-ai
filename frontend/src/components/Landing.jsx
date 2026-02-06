@@ -1,6 +1,23 @@
+import { useNavigate } from "react-router-dom";
+import { loginWithGoogle } from "../services/authService";
+import { useState } from "react";
+
 import "./Landing.css";
 
 const Landing = () => {
+    const navigate = useNavigate();
+
+  const handleGetStarted = async () => {
+    try {
+      const { idToken } = await loginWithGoogle();
+      console.log("Firebase ID Token:", idToken);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Google login failed:", err);
+      alert(err?.message || "Google login failed");
+    }
+  };
+
   return (
     <div className="landing">
 
@@ -11,8 +28,26 @@ const Landing = () => {
           <nav className="nav">
             <a href="#features">Features</a>
             <a href="#how">How it Works</a>
-            <a href="/login">Login</a>
-            <a href="/register" className="btn-primary">Get Started</a>
+            <a
+    href="#"
+    onClick={(e) => {
+      e.preventDefault();
+      handleGetStarted();
+    }}
+  >
+    Login
+  </a>
+
+  <a
+    href="#"
+    className="btn-primary"
+    onClick={(e) => {
+      e.preventDefault();
+      handleGetStarted();
+    }}
+  >
+    Get Started
+  </a>
           </nav>
         </div>
       </header>
@@ -32,7 +67,7 @@ const Landing = () => {
             </p>
 
             <div className="hero-actions">
-              <a className="btn-primary">Get Started Free</a>
+            <a className="btn-primary" onClick={handleGetStarted}>Get Started Free</a>
               <a className="btn-secondary">See How It Works</a>
             </div>
           </div>
