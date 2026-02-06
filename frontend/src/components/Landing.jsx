@@ -1,13 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import { loginWithGoogle } from "../services/authService";
 import { useState } from "react";
-
 import "./Landing.css";
 
 const Landing = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const handleGetStarted = async () => {
+    if (loading) return;
+    setLoading(true);
+
     try {
       const { idToken } = await loginWithGoogle();
       console.log("Firebase ID Token:", idToken);
@@ -15,6 +18,8 @@ const Landing = () => {
     } catch (err) {
       console.error("Google login failed:", err);
       alert(err?.message || "Google login failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -28,26 +33,17 @@ const Landing = () => {
           <nav className="nav">
             <a href="#features">Features</a>
             <a href="#how">How it Works</a>
-            <a
-    href="#"
-    onClick={(e) => {
-      e.preventDefault();
-      handleGetStarted();
-    }}
-  >
-    Login
-  </a>
 
-  <a
-    href="#"
-    className="btn-primary"
-    onClick={(e) => {
-      e.preventDefault();
-      handleGetStarted();
-    }}
-  >
-    Get Started
-  </a>
+            <button onClick={handleGetStarted}>
+              Login
+            </button>
+
+            <button
+              className="btn-primary"
+              onClick={handleGetStarted}
+            >
+              Get Started
+            </button>
           </nav>
         </div>
       </header>
@@ -57,18 +53,28 @@ const Landing = () => {
         <div className="container hero-grid">
           <div>
             <span className="badge">AI-Powered Wellness Platform</span>
+
             <h2>
               Smarter Fitness.<br />
               Healthier Living.
             </h2>
+
             <p>
               Personalized workout and nutrition plans that adapt in real time
               with an intelligent AI health companion.
             </p>
 
             <div className="hero-actions">
-            <a className="btn-primary" onClick={handleGetStarted}>Get Started Free</a>
-              <a className="btn-secondary">See How It Works</a>
+              <button
+                className="btn-primary"
+                onClick={handleGetStarted}
+              >
+                Get Started Free
+              </button>
+
+              <a className="btn-secondary" href="#how">
+                See How It Works
+              </a>
             </div>
           </div>
 
@@ -104,7 +110,7 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* How it works */}
+      {/* How */}
       <section id="how" className="how">
         <div className="container">
           <h3>How It Works</h3>
@@ -121,7 +127,13 @@ const Landing = () => {
       <section className="cta">
         <h3>Start your wellness journey today</h3>
         <p>Simple. Personalized. Adaptive.</p>
-        <a className="btn-primary">Create Free Account</a>
+
+        <button
+          className="btn-primary"
+          onClick={handleGetStarted}
+        >
+          Create Free Account
+        </button>
       </section>
 
       {/* Footer */}
@@ -135,6 +147,7 @@ const Landing = () => {
           </div>
         </div>
       </footer>
+
     </div>
   );
 };
