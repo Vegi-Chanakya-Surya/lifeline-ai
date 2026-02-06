@@ -1,4 +1,5 @@
 import "./Landing.css";
+import { Link } from "react-router-dom";
 
 const Landing = () => {
   return (
@@ -11,8 +12,8 @@ const Landing = () => {
           <nav className="nav">
             <a href="#features">Features</a>
             <a href="#how">How it Works</a>
-            <a href="/login">Login</a>
-            <a href="/register" className="btn-primary">Get Started</a>
+            <Link to="/login">Login</Link>
+            <Link to="/register" className="btn-primary">Get Started</Link>
           </nav>
         </div>
       </header>
@@ -32,7 +33,7 @@ const Landing = () => {
             </p>
 
             <div className="hero-actions">
-              <a className="btn-primary">Get Started Free</a>
+              <Link to="/login" className="btn-primary">Get Started Free</Link>
               <a className="btn-secondary">See How It Works</a>
             </div>
           </div>
