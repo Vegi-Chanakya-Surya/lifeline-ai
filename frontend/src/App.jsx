@@ -6,7 +6,7 @@ import Dashboard from "./pages/Dashboard";
 
 import Workouts from "./pages/Workouts";
 import Nutrition from "./pages/Nutrition";
-import AICoach from "./pages/AICoach";
+import AICoach from "./pages/Coach";
 
 export default function App() {
   return (

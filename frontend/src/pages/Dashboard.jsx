@@ -4,7 +4,17 @@ import { useNavigate } from "react-router-dom";
 
 import { auth, db } from "../services/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, getDocs, orderBy, query, limit } from "firebase/firestore";
+
+import {
+  collection,
+  getDocs,
+  orderBy,
+  query,
+  limit,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -15,6 +25,98 @@ export default function Dashboard() {
   const [loadingData, setLoadingData] = useState(false);
   const [records, setRecords] = useState([]);
   const [err, setErr] = useState("");
+  const handleWorkoutClick = async () => {
+  console.log("Workout button clicked");
+
+  if (!user) {
+    alert("User not logged in");
+    return;
+  }
+
+  try {
+    const res = await fetch("http://localhost:8000/workouts/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        goal: "general fitness",
+        location: "home",
+        time_per_day: 30,
+        fitness_level: "beginner",
+        equipment: "none",
+      }),
+    });
+
+    const text = await res.text();
+    const plan = JSON.parse(text);
+
+    // 🔒 VALIDATION
+    if (!plan.plan || !Array.isArray(plan.plan)) {
+      throw new Error("Invalid workout plan format");
+    }
+
+    // ✅ SAVE TO FIRESTORE (USER-SPECIFIC)
+    await addDoc(
+      collection(db, "users", user.uid, "workoutPlans"),
+      {
+        createdAt: serverTimestamp(),
+        plan: plan.plan,
+        source: "ai",
+      }
+    );
+
+    // ✅ OPTIONAL CACHE
+    localStorage.setItem("workoutPlan", JSON.stringify(plan));
+
+    navigate("/workouts");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to generate workout plan");
+  }
+};
+
+  const handleNutritionClick = async () => {
+  if (!user) {
+    alert("User not logged in");
+    return;
+  }
+
+  try {
+    const res = await fetch("http://localhost:8000/nutrition/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        goal: "general health",
+        diet: "vegetarian",
+        activity: "moderate",
+        allergies: "none",
+      }),
+    });
+
+    const plan = await res.json();
+
+    if (!plan.plan) throw new Error("Invalid nutrition plan");
+
+    // 🔥 Save to Firestore
+    await addDoc(
+      collection(db, "users", user.uid, "nutritionPlans"),
+      {
+        createdAt: serverTimestamp(),
+        plan: plan.plan,
+        source: "ai",
+      }
+    );
+
+    // Optional cache
+    localStorage.setItem("nutritionPlan", JSON.stringify(plan));
+
+    navigate("/nutrition");
+
+  } catch (err) {
+    console.error(err);
+    alert("Failed to generate nutrition plan");
+  }
+};
+
 
   // 1) Always know if user is logged in
   useEffect(() => {
@@ -161,9 +263,27 @@ export default function Dashboard() {
 
             {/* ACTIONS */}
             <div className="grid md:grid-cols-3 gap-5">
-              <ActionCard title="Workout Plan" desc="Monthly workout plan + videos" button="Start" />
-              <ActionCard title="Nutrition Plan" desc="Diet plan + recipe videos" button="View" />
-              <ActionCard title="AI Coach" desc="Ask doubts anytime" button="Open" />
+              <ActionCard
+                title="Workout Plan"
+                desc="Monthly workout plan"
+                button="Start"
+                onClick={handleWorkoutClick}
+              />
+
+                            <ActionCard
+                title="Nutrition Plan"
+                desc="Diet plan "
+                button="View"
+                onClick={handleNutritionClick}
+              />
+
+              <ActionCard
+                title="AI Coach"
+                desc="Ask anything about your diet & workouts"
+                button="Open"
+                onClick={() => navigate("/coach")}
+              />
+
             </div>
           </>
         )}
@@ -171,13 +291,17 @@ export default function Dashboard() {
     </div>
   );
 }
-
-function ActionCard({ title, desc, button }) {
+function ActionCard({ title, desc, button, onClick }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-6 hover:translate-y-[-4px] transition">
       <div className="text-lg font-bold">{title}</div>
       <div className="text-gray-400 mt-2">{desc}</div>
-      <button className="mt-5 px-4 py-2 rounded-lg bg-green-500 text-black font-semibold hover:bg-green-600">
+
+      <button
+        type="button"
+        onClick={onClick}
+        className="mt-5 px-4 py-2 rounded-lg bg-green-500 text-black font-semibold hover:bg-green-600"
+      >
         {button}
       </button>
     </div>

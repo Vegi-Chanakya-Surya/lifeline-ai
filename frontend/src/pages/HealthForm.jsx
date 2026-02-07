@@ -60,16 +60,37 @@ export default function HealthForm() {
         return;
       }
 
-      const payload = {
-        ...form,
-        age: Number(form.age),
-        height: Number(form.height),
-        weight: Number(form.weight),
-        bmi: Number(calculateBMI()),
-        smoking: form.smoking === "Yes",
-        alcohol: form.alcohol === "Yes",
-        userId: user.uid,
+      const stressMap = {
+        Low: 3,
+        Medium: 6,
+        High: 9,
       };
+
+      const medicalString =
+        form.medical.length > 0
+          ? form.medical.join(", ")
+          : "None";
+
+      const payload = {
+        age: Number(form.age),
+        gender: form.gender,
+
+        height: form.height ? Number(form.height) : null,
+        weight: form.weight ? Number(form.weight) : null,
+
+        sleep: Number(form.sleep),
+        exercise: Number(form.exercise),
+        stress: stressMap[form.stress],
+
+        smoking: form.smoking === "Yes",
+        alcohol: form.alcohol === "Yes" ? 1 : 0,
+
+        medical: medicalString,
+
+        activity: form.activity || null,
+        diet: form.diet || null,
+      };
+
 
       // 1) Save form to Firestore under the user
       await addDoc(collection(db, "users", user.uid, "healthRecords"), {
@@ -77,14 +98,25 @@ export default function HealthForm() {
         createdAt: serverTimestamp(),
       });
 
-      // 2) Call backend
-      const risk = await postJSON("http://127.0.0.1:8000/predict", payload);
+      console.log("Submitting form payload:", payload);
 
-      // 3) Save for dashboard immediate display
-      localStorage.setItem("riskResult", JSON.stringify(risk));
+// 2) Call backend: risk
+const risk = await postJSON("http://127.0.0.1:8000/predict", payload);
+console.log("Risk response:", risk);
 
-      // 4) Go dashboard
-      navigate("/dashboard");
+// 3) Call backend: AI analysis
+const analysis = await postJSON("http://127.0.0.1:8000/analyze", payload);
+console.log("Analysis response:", analysis);
+
+// 4) Store everything
+localStorage.setItem("riskResult", JSON.stringify(risk));
+localStorage.setItem("analysisResult", JSON.stringify(analysis));
+console.log("Saved to localStorage");
+
+// 5) Go dashboard
+navigate("/dashboard");
+
+
     } catch (err) {
       console.error(err);
       alert(err?.message || "Submission failed");

@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import TopNav from "../components/TopNav";
 
 export default function Dashboard() {
+  <h1>🔥 DASHBOARD LOADED 🔥</h1>
+
   const navigate = useNavigate();
 
   const risk = useMemo(() => {
@@ -13,6 +15,47 @@ export default function Dashboard() {
     }
   }, []);
 
+async function handleWorkoutClick() {
+  // 1️⃣ If workout already exists, just show it
+  console.log("Workout card clicked"); // 👈 ADD THIS
+  const existing = localStorage.getItem("workoutPlan");
+  if (existing) {
+    navigate("/workouts");
+    return;
+  }
+
+  // 2️⃣ Get risk + user data (from localStorage / Firebase later)
+  const risk = JSON.parse(localStorage.getItem("riskResult") || "{}");
+
+  // Temporary fallback logic (you can refine later)
+  const goal =
+    risk?.risk_level === "High" ? "weight loss" : "general fitness";
+
+  const fitness_level =
+    risk?.risk_score > 60 ? "beginner" : "intermediate";
+
+  const time_per_day =
+    fitness_level === "beginner" ? 20 : 30;
+
+  // 3️⃣ Call backend
+  const res = await fetch("http://localhost:8000/workouts/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      goal,
+      location: "home",
+      time_per_day,
+      fitness_level,
+      equipment: "none",
+    }),
+  });
+
+  const plan = await res.json();
+
+  // 4️⃣ Save + redirect
+  localStorage.setItem("workoutPlan", JSON.stringify(plan));
+  navigate("/workouts");
+}
   const sparks = [
     "Walking 10 mins after meals improves blood sugar.",
     "Muscle burns calories even at rest.",
@@ -66,12 +109,17 @@ export default function Dashboard() {
         {/* Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <ActionCard
-            icon="🏋️"
-            title="Workout Plan"
-            desc={risk ? "Start your 30-day routine + videos" : "Generate plan from your form"}
-            cta="Start"
-            onClick={() => navigate("/workouts")}
-          />
+  icon="🏋️"
+  title="Workout Plan"
+  desc={risk ? "Start your 30-day routine + videos" : "Generate plan from your form"}
+  cta="Start"
+  onClick={() => {
+    console.log("Workout card pressed");
+    handleWorkoutClick();
+  }}
+/>
+
+
           <ActionCard
             icon="🥗"
             title="Nutrition Plan"
@@ -128,25 +176,20 @@ function Metric({ title, value, highlight }) {
 
 function ActionCard({ icon, title, desc, cta, onClick }) {
   return (
-    <div
-      className="rounded-2xl p-6 bg-white/5 border border-white/10 hover:translate-y-[-6px] hover:shadow-[0_20px_45px_rgba(34,197,94,0.18)] transition cursor-pointer"
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
-    >
+    <div className="rounded-2xl p-6 bg-white/5 border border-white/10 hover:translate-y-[-6px] hover:shadow-[0_20px_45px_rgba(34,197,94,0.18)] transition">
       <div className="text-4xl">{icon}</div>
       <h3 className="mt-3 text-lg font-semibold">{title}</h3>
       <p className="mt-2 text-white/70 text-sm">{desc}</p>
 
+      {/* 🔴 SINGLE SOURCE OF TRUTH FOR CLICK */}
       <button
-        className="mt-4 px-4 py-2 rounded-xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-black"
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
-      >
-        {cta}
-      </button>
+  type="button"
+  onClick={() => alert("BUTTON CLICK WORKS")}
+  className="mt-4 px-4 py-2 rounded-xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-black"
+>
+  {cta}
+</button>
+
     </div>
   );
 }

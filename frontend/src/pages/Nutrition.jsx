@@ -1,45 +1,78 @@
+import { useEffect, useState } from "react";
+import { auth, db } from "../services/firebase";
+import { collection, getDocs, orderBy, query, limit } from "firebase/firestore";
 import TopNav from "../components/TopNav";
 
 export default function Nutrition() {
-  let risk = null;
-  try {
-    risk = JSON.parse(localStorage.getItem("riskResult") || "null");
-  } catch {}
+  const [plan, setPlan] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const q = query(
+          collection(db, "users", user.uid, "nutritionPlans"),
+          orderBy("createdAt", "desc"),
+          limit(1)
+        );
+
+        const snap = await getDocs(q);
+
+        if (!snap.empty) {
+          setPlan(snap.docs[0].data().plan);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  if (loading) return <div className="text-white p-8">Loading...</div>;
+  if (!plan) return <div className="text-white p-8">No nutrition plan yet</div>;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#0f172a,#020617)] text-white">
-      <TopNav rightText="Update Form" onRightClick={() => (window.location.href = "/form")} />
+    <div className="min-h-screen bg-black text-white p-6">
+      <TopNav />
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-semibold">Nutrition Plans</h1>
-        <p className="text-white/70 mt-2">
-          {risk
-            ? "Next: Gemini will generate 30-day diet + recipe YouTube links."
-            : "Fill the health form first to generate nutrition plan."}
-        </p>
+      <h1 className="text-2xl font-bold mb-6">Your Nutrition Plan 🥗</h1>
 
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <MealCard title="Breakfast 🌅" name="Oats + Banana + Nuts" meta="~350 kcal" />
-          <MealCard title="Lunch ☀️" name="Roti + Paneer + Mixed Veg" meta="~450 kcal" />
-          <MealCard title="Dinner 🌙" name="Grilled Protein + Rice + Salad" meta="~400 kcal" />
-          <MealCard title="Snack 🍎" name="Roasted Makhana / Fruit" meta="~150 kcal" />
-        </div>
+      <div className="grid md:grid-cols-2 gap-6">
+        {plan.map((day, i) => (
+          <div key={i} className="border border-white/10 rounded-xl p-5">
+            <h2 className="font-bold">{day.day}</h2>
+
+            <Section title="Breakfast" items={day.breakfast} />
+            <Section title="Lunch" items={day.lunch} />
+            <Section title="Snacks" items={day.snacks} />
+            <Section title="Dinner" items={day.dinner} />
+
+            <p className="text-green-300 text-sm mt-3">💡 {day.tip}</p>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-function MealCard({ title, name, meta }) {
+function Section({ title, items }) {
   return (
-    <div className="rounded-2xl p-6 bg-white/5 border border-white/10">
-      <div className="flex items-center justify-between">
-        <div className="text-lg font-semibold">{title}</div>
-        <div className="text-xs text-white/60">{meta}</div>
-      </div>
-      <div className="mt-3 text-white/80 font-medium">{name}</div>
-      <div className="mt-4 text-white/60 text-sm">
-        (Next phase: show ingredients + macros + “Watch recipe” video.)
-      </div>
+    <div className="mt-3">
+      <div className="text-sm font-semibold">{title}</div>
+      <ul className="text-sm text-gray-300 list-disc ml-5">
+        {items.map((i, idx) => (
+          <li key={idx}>{i}</li>
+        ))}
+      </ul>
     </div>
   );
 }
