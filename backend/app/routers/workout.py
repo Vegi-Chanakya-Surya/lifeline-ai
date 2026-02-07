@@ -1,8 +1,5 @@
 from fastapi import APIRouter
 from schemas.workout_schema import WorkoutRequest
-def generate_workout_plan(data):
-    print("🔥 NEW WORKOUT SERVICE RUNNING 🔥")
-
 from services.workout_service import generate_workout_plan
 
 router = APIRouter(

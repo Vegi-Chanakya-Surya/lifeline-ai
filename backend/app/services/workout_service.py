@@ -1,35 +1,77 @@
 import json
 from core.groq_client import generate_ai_response
-from services.risk_engine import simple_risk_engine  # adjust import if needed
+from core.firebase_client import db
+from services.risk_engine import simple_risk_engine
 
-def analyze_user(req):
-    risk = simple_risk_engine(req)
+
+# --------------------------------------------------
+# FETCH USER DATA FROM FIREBASE
+# --------------------------------------------------
+
+def get_user_from_firebase(user_id: str):
+    doc = db.collection("users").document(user_id).get()
+
+    if not doc.exists:
+        raise ValueError("User not found in Firebase")
+
+    return doc.to_dict()
+
+import re
+import json
+
+def safe_json_loads(text: str):
+    """
+    Extracts the first valid JSON object from text and parses it safely.
+    """
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Try to extract JSON block
+    match = re.search(r"\{[\s\S]*\}", text)
+    if match:
+        try:
+            return json.loads(match.group())
+        except json.JSONDecodeError:
+            pass
+
+    raise ValueError("AI response is not involved JSON")
+
+
+# --------------------------------------------------
+# ANALYZE USER (USING FIREBASE DATA)
+# --------------------------------------------------
+
+def analyze_user(user_id: str):
+    user = get_user_from_firebase(user_id)
+    risk = simple_risk_engine(user)
 
     prompt = f"""
 You are Lifeline AI, a wellness assistant.
 This is NOT medical advice.
 
 User data:
-Age: {req.age}
-Gender: {req.gender}
+Age: {user.get('age')}
+Gender: {user.get('gender')}
 BMI: {risk['bmi']}
-Sleep: {req.sleep}
-Exercise: {req.exercise}
-Stress: {req.stress}
-Smoking: {req.smoking}
-Alcohol: {req.alcohol}
-Medical history: {req.medical}
+Sleep: {user.get('sleep')}
+Exercise: {user.get('exercise')}
+Stress: {user.get('stress')}
+Smoking: {user.get('smoking')}
+Alcohol: {user.get('alcohol')}
+Medical history: {user.get('medical')}
 
 Risk score: {risk['risk_score']} / 100
 Risk level: {risk['risk_level']}
 Contributing factors: {risk['contributing_factors']}
 
 Return STRICT JSON only with keys:
-risk_summary (string)
-risk_factors (array of strings)
-workout_plan_summary (string)
-nutrition_plan_summary (string)
-daily_spark (string)
+risk_summary
+risk_factors
+workout_plan_summary
+nutrition_plan_summary
+daily_spark
 """
 
     try:
@@ -37,7 +79,6 @@ daily_spark (string)
         return json.loads(ai_response)
 
     except Exception:
-        # Safe fallback
         return {
             "risk_summary": f"Your health risk level is {risk['risk_level']}.",
             "risk_factors": risk["contributing_factors"],
@@ -46,9 +87,16 @@ daily_spark (string)
             "daily_spark": "Small consistent steps lead to lasting health.",
         }
 
-def build_workout_prompt(data):
+
+# --------------------------------------------------
+# WORKOUT PLAN PROMPT (DAY-WISE SAFE)
+# --------------------------------------------------
+
+def build_workout_prompt(data, day_number: int):
     return f"""
-Generate a 7-day workout plan in STRICT JSON format.
+Generate ONLY Day {day_number} of a workout plan.
+Respond in STRICT JSON only.
+No markdown. No explanations.
 
 User details:
 - Goal: {data.goal}
@@ -57,72 +105,65 @@ User details:
 - Fitness level: {data.fitness_level}
 - Equipment: {data.equipment or "none"}
 
-Return ONLY valid JSON in this format:
+Return JSON in this EXACT format:
 {{
-  "plan": [
+  "day": "Day {day_number}",
+  "warmup": ["..."],
+  "exercises": [
     {{
-      "day": "Day 1",
-      "warmup": ["..."],
-      "exercises": [
-        {{
-          "name": "",
-          "sets": 0,
-          "reps": 0,
-          "rest": ""
-        }}
-      ],
-      "cooldown": ["..."],
-      "tip": ""
+      "name": "",
+      "sets": 0,
+      "reps": "",
+      "rest": ""
     }}
-  ]
+  ],
+  "cooldown": ["..."],
+  "tip": ""
 }}
 """
+
+
+
+# --------------------------------------------------
+# GENERATE FULL 7-DAY WORKOUT PLAN
+# --------------------------------------------------
 
 def generate_workout_plan(data):
     print("🔥 NEW WORKOUT SERVICE RUNNING 🔥")
 
-    prompt = build_workout_prompt(data)
+    weekly_plan = []
 
-    try:
-        ai_response = generate_ai_response(prompt)
-        ai_response = ai_response.strip()
+    for day in range(1, 8):   # 🔁 LOOP FOR 7 DAYS
+        try:
+            prompt = build_workout_prompt(data, day)
+            ai_response = generate_ai_response(prompt).strip()
 
-        # Remove markdown if present
-        if ai_response.startswith("```"):
-            ai_response = ai_response.replace("```json", "").replace("```", "").strip()
+            # Remove markdown if present
+            if ai_response.startswith("```"):
+                ai_response = ai_response.replace("```json", "").replace("```", "").strip()
 
-        plan_json = json.loads(ai_response)
+            day_plan = json.loads(ai_response)
+            weekly_plan.append(day_plan)
 
-        if not isinstance(plan_json, dict) or "plan" not in plan_json:
-            raise ValueError("Invalid JSON structure")
+        except Exception as e:
+            print(f"❌ ERROR GENERATING DAY {day}:", e)
 
-        return plan_json
+            # Fallback for this specific day
+            weekly_plan.append({
+                "day": f"Day {day}",
+                "warmup": ["5 min walking"],
+                "exercises": [
+                    {
+                        "name": "Bodyweight Squats",
+                        "sets": 3,
+                        "reps": "12",
+                        "rest": "60 sec"
+                    }
+                ],
+                "cooldown": ["Light stretching"],
+                "tip": "Consistency matters more than intensity."
+            })
 
-    except Exception as e:
-        print("❌ WORKOUT AI ERROR:", e)
-
-        # ✅ ALWAYS RETURN A VALID PLAN
-        return {
-            "plan": [
-                {
-                    "day": "Day 1",
-                    "warmup": ["5 min walking", "Arm swings"],
-                    "exercises": [
-                        {
-                            "name": "Bodyweight Squats",
-                            "sets": 3,
-                            "reps": "12-15",
-                            "rest": "60 sec"
-                        },
-                        {
-                            "name": "Wall Push-ups",
-                            "sets": 3,
-                            "reps": "10-12",
-                            "rest": "60 sec"
-                        }
-                    ],
-                    "cooldown": ["Light stretching"],
-                    "tip": "Consistency matters more than intensity."
-                }
-            ]
-        }
+    return {
+        "plan": weekly_plan
+    }
