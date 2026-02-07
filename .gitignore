@@ -13,3 +13,9 @@ dist/
 
 # logs
 npm-debug.log*
+
+serviceAccountKey.json
+backend/app/serviceAccountKey.json
+.env
+venv/
+node_modules/
