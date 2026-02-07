@@ -121,6 +121,7 @@ a {
   gap: 16px;
 }
 
+
 .preview-card {
   background: #020617;
   border: 1px solid #1f2933;
@@ -241,4 +242,42 @@ a {
   .nav {
     display: none;
   }
+}
+
+.nav-image {
+  height: 28px;
+  width: auto;
+  cursor: pointer;
+}
+
+.nav-image-link {
+  display: flex;
+  align-items: center;
+}
+
+.image-button {
+  padding: 0;
+  background: none;
+  border: none;
+}
+
+.how-preview-img {
+  height: 40px;
+  width: auto;
+}
+
+.preview-card {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-image {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  object-fit: contain;
 }

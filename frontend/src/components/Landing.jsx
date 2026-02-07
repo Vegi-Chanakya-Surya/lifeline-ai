@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { loginWithGoogle } from "../services/authService";
+import dashboardPreview from "../components/dashboard-preview.png";
 import "./Landing.css";
 
 const Landing = () => {
@@ -14,7 +15,7 @@ const Landing = () => {
     try {
       const { idToken } = await loginWithGoogle();
       console.log("Firebase ID Token:", idToken);
-      navigate("/form"); // go to form after login
+      navigate("/form");
     } catch (err) {
       console.error("Google login failed:", err);
       alert(err?.message || "Google login failed");
@@ -25,9 +26,11 @@ const Landing = () => {
 
   return (
     <div className="landing">
+      {/* HEADER */}
       <header className="header">
         <div className="container header-inner">
           <h1 className="logo">LifeLine AI</h1>
+
           <nav className="nav">
             <a href="#features">Features</a>
             <a href="#how">How it Works</a>
@@ -36,41 +39,57 @@ const Landing = () => {
               {loading ? "Loading..." : "Login"}
             </button>
 
-            <button className="btn-primary" onClick={handleGetStarted} disabled={loading}>
+            <button
+              className="btn-primary"
+              onClick={handleGetStarted}
+              disabled={loading}
+            >
               {loading ? "Loading..." : "Get Started"}
             </button>
           </nav>
         </div>
       </header>
 
+      {/* HERO */}
       <section className="hero">
         <div className="container hero-grid">
           <div>
             <span className="badge">AI-Powered Wellness Platform</span>
+
             <h2>
-              Smarter Fitness.<br />
+              Smarter Fitness.
+              <br />
               Healthier Living.
             </h2>
+
             <p>
               Personalized workout and nutrition plans that adapt in real time
               with an intelligent AI health companion.
             </p>
 
             <div className="hero-actions">
-              <button className="btn-primary" onClick={handleGetStarted} disabled={loading}>
+              <button
+                className="btn-primary"
+                onClick={handleGetStarted}
+                disabled={loading}
+              >
                 {loading ? "Loading..." : "Get Started Free"}
               </button>
-
-              <a className="btn-secondary" href="#how">
-                See How It Works
-              </a>
             </div>
           </div>
 
-          <div className="preview-card">App Preview</div>
+          {/* ✅ IMAGE INSIDE APP PREVIEW BOX */}
+          <div className="preview-card">
+            <img
+              src={dashboardPreview}
+              alt="LifeLine AI Dashboard Preview"
+              className="preview-image"
+            />
+          </div>
         </div>
       </section>
 
+      {/* FEATURES */}
       <section id="features" className="features">
         <div className="container">
           <h3>Everything you need to stay healthy</h3>
@@ -96,6 +115,7 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* HOW IT WORKS */}
       <section id="how" className="how">
         <div className="container">
           <h3>How It Works</h3>
@@ -108,15 +128,21 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* CTA */}
       <section className="cta">
         <h3>Start your wellness journey today</h3>
         <p>Simple. Personalized. Adaptive.</p>
 
-        <button className="btn-primary" onClick={handleGetStarted} disabled={loading}>
+        <button
+          className="btn-primary"
+          onClick={handleGetStarted}
+          disabled={loading}
+        >
           {loading ? "Loading..." : "Create Free Account"}
         </button>
       </section>
 
+      {/* FOOTER */}
       <footer className="footer">
         <div className="container footer-inner">
           <p>© 2026 LifeLine AI</p>
