@@ -265,7 +265,7 @@ export default function Dashboard() {
             <div className="grid md:grid-cols-3 gap-5">
               <ActionCard
                 title="Workout Plan"
-                desc="Monthly workout plan"
+                desc="Weekly workout plan"
                 button="Start"
                 onClick={handleWorkoutClick}
               />
